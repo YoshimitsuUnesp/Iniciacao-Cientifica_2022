@@ -1,1 +1,1 @@
-# Iniciacao-Cientifica_2022
+# Reconhecimento Inteligente de Locutores na Modalidade Independete do Discurso
