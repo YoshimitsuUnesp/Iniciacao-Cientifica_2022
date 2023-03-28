@@ -10,7 +10,7 @@ using namespace std;
 // Riff chunk (header)
 const string chunk_id = "RIFF"; // 4 bytes - sempre recebe a palavra RIFF
 const string chunk_size = "####"; // 4 bytes de espaco
-const string format = "WAVE"; // 4 bytes - format recebe WAVE
+const string format = "WAVE"; // 4 bytes - recebe WAVE
 
 // Format subchunk
 const string subchunk1_id = "fmt "; // 4 bytes - recebe fmt
@@ -27,9 +27,21 @@ const string subchunk2_id = "data"; // 4 bytes - sempre recebe a palavra data
 const string subchunk2_size = "####"; // 4 bytes - Num de bytes nos dados 
 */
 
-typedef struct wav{
 
-}Audio;
+typedef struct{
+    char chunk_id[4]; // riff
+    int chunk_size;
+    char format[4]; // wave
+    char subchunk_1_id[4];
+    int subchunk1_size;
+    int audio_format;
+    int num_channels;
+    int sample_rate;
+    int byte_rate;
+    int block_align;
+    int bytes_per_sample;
+    
+}Header;
 
 int main(){
 
