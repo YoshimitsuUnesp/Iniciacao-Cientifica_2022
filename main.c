@@ -1,11 +1,6 @@
 // Video de auxilio: https://www.youtube.com/watch?v=rHqkeLxAsTc
 // Explicacao WAVE: http://soundfile.sapp.org/doc/WaveFormat/
 
-#include <iostream>
-#include <fstream>
-
-using namespace std;
-
 /*
 // Riff chunk (header)
 const string chunk_id = "RIFF"; // 4 bytes - sempre recebe a palavra RIFF
@@ -24,27 +19,46 @@ const int bits_per_sample = 16; // 2 bytes - 8 bits = 8, 16 bits = 16, ...
 
 // Data subchunk
 const string subchunk2_id = "data"; // 4 bytes - sempre recebe a palavra data
-const string subchunk2_size = "####"; // 4 bytes - Num de bytes nos dados 
+const string subchunk2_size = "####"; // 4 bytes - Num de bytes nos dados
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include "header.h"
 
-typedef struct{
-    char chunk_id[4]; // riff
-    int chunk_size;
-    char format[4]; // wave
-    char subchunk_1_id[4];
-    int subchunk1_size;
-    int audio_format;
-    int num_channels;
-    int sample_rate;
-    int byte_rate;
-    int block_align;
-    int bytes_per_sample;
-    
-}Header;
+int main()
+{
+    int op;
 
-int main(){
-
+    do
+    {
+        printf(
+            "-----------------------\n"
+            "|      MAIN MENU      |\n"
+            "-----------------------\n"
+            "| 1 - Copy WAV file   |\n"
+            "| 2 - Invert WAV file |\n"
+            "| 0 - Exit            |\n"
+            "-----------------------\n"
+            "\nChoose an option:\n");
+        scanf("%d", &op);
+        switch (op)
+        {
+        case 0:
+            printf("\nClosing program...\n");
+            exit(0);
+            break;
+        case 1:
+            copy_wav();
+            break;
+        case 2:
+            invert_wav();
+            break;
+        default:
+            printf("\nERROR: INVALID CODE\n\n");
+            break;
+        }
+    } while (op != 0);
 
     return 0;
 }

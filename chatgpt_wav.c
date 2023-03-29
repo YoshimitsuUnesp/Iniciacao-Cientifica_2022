@@ -20,7 +20,7 @@ typedef struct {
 
 int main() {
     // Abre o arquivo WAV para leitura
-    FILE *inputFile = fopen("audio.wav", "rb");
+    FILE *inputFile = fopen("audio.wav", "r");
     if (!inputFile) {
         printf("Não foi possível abrir o arquivo para leitura!\n");
         return 1;
