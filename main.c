@@ -26,6 +26,8 @@ const string subchunk2_size = "####"; // 4 bytes - Num de bytes nos dados
 #include <stdlib.h>
 #include "header.h"
 
+// Compiled using GCC 64 bit; int = 4 bytes
+
 int main()
 {
     int op;

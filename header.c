@@ -4,7 +4,8 @@
 
 void copy_wav()
 {
-    FILE *input_file = fopen("applause.wav", "r");
+    int i;
+    FILE *input_file = fopen("applause.wav", "rb");
     Header header;
 
     // Checks if the file exists
@@ -14,45 +15,50 @@ void copy_wav()
         exit(1);
     }
 
-    // Reads the header
-    // fread(&header, sizeof(header), 1, input_file);
-
     // Collects the header data
-    fseek(input_file, 0, SEEK_SET);
-    int aqui = ftell(input_file);
-    printf("PONTEIRO AQUI 1: %d\n\n", aqui);
+    // First chunk
+    fread(&header.chunk_id, sizeof(header.chunk_id) - 1, 1, input_file);
+    fread(&header.chunk_size, sizeof(header.chunk_size), 1, input_file);
+    fread(&header.format,sizeof(header.format) - 1, 1, input_file);
 
-    fscanf(input_file, "%s", &header.chunk_id);
-    aqui = ftell(input_file);
-    printf("PONTEIRO AQUI 2: %d\n\n", aqui);
+    // Sub-chunk 1
+    fread(&header.subchunk1_id, sizeof(header.subchunk1_id) - 1, 1, input_file);
+    fread(&header.subchunk1_size, sizeof(header.subchunk1_size), 1, input_file);
+    fread(&header.audio_format, sizeof(header.audio_format), 1, input_file);
+    fread(&header.num_channels, sizeof(header.num_channels), 1, input_file);
+    fread(&header.sample_rate, sizeof(header.sample_rate), 1, input_file);
+    fread(&header.byte_rate, sizeof(header.byte_rate), 1, input_file);
+    fread(&header.block_align, sizeof(header.block_align), 1, input_file);
+    fread(&header.bits_per_sample, sizeof(header.bits_per_sample), 1, input_file);
+    
+    // Sub-chunk 2
+    fread(&header.subchunk2_id, sizeof(header.subchunk2_id) - 1, 1, input_file);
+    fread(&header.subchunk2_size, sizeof(header.subchunk2_id), 1, input_file);
 
-    fscanf(input_file, "%d", &header.chunk_size);
-    aqui = ftell(input_file);
-    printf("PONTEIRO AQUI 2: %d\n\n", aqui);
-
-    // Essa merda dando errado aqui tomar no cu porra caralho se foder buceta do cacete
-    fscanf(input_file, "%s", &header.format);
-    aqui = ftell(input_file);
-    printf("PONTEIRO AQUI 3: %d\n\n", aqui);
-
-    // fscanf(input_file, "%4s %d %4s %4s %d %d", &header.chunk_id, &header.chunk_size, &header.format, &header.subchunk1_id, &header.subchunk1_size, &header.audio_format);
+    header.chunk_id[4] = '\0';
+    header.format[4] = '\0';
+    header.subchunk1_id[4] = '\0';
+    header.subchunk2_id[4] = '\0';
 
     // Prints the collected data
-    printf("File type: %s\n", header.chunk_id);
+    printf("File type: %s\n", header.chunk_id);    
     printf("File size, excluding header: %d\n", header.chunk_size);
-    printf("Subtype: %s\n");
-    printf("Identifier: %s\n");
-    printf("Chunck size post header: %d\n");
-    printf("Format type: %d\n");
-    printf("Number of channels: %d\n");
-    printf("Sampling rate: %d\n");
-    printf("Average number os bits per second: %d\n");
-    printf("Block alignment in bytes: %d\n");
-    printf("Resolution: %d\n");
-    printf("Identifier: %s\n");
-    printf("Data chunk size: %d\n");
-    printf("Number of frames to be sampled: %d\n");
-    printf("Windows length: %d\n");
+    printf("Subtype: %s\n", header.format);
+    printf("Identifier: %s\n", header.subchunk1_id);
+    printf("Chunck size post header: %d\n", header.subchunk1_size);
+    printf("Format type: %d\n", header.audio_format); // Erro aqui
+    printf("Number of channels: %d\n", header.num_channels); // Erro aqui
+    printf("Sampling rate: %d\n", header.sample_rate);
+    printf("Average number os bits per second: %d\n", header.byte_rate);
+    printf("Block alignment in bytes: %hu\n", header.block_align);
+    printf("Resolution: %hu\n", header.bits_per_sample);
+    printf("Identifier: %s\n", header.subchunk2_id);
+    printf("Data chunk size: %d\n", header.subchunk2_size);
+    printf("Number of frames to be sampled: %d\n", header.subchunk2_size / header.block_align);
+    printf("Windows length: %d\n", header.subchunk2_size / header.block_align / header.num_channels); // Erro aqui
+
+    short int a;
+    printf("%d", sizeof(a));
 
     printf("\nPress ENTER to continue\n");
     getchar();

@@ -35,6 +35,7 @@ int main() {
     printf("Número de canais: %d\n", header.NumChannels);
     printf("Taxa de amostragem: %d Hz\n", header.SampleRate);
     printf("Bits por amostra: %d\n", header.BitsPerSample);
+    printf("Format: %s\n", header.Format);
     
     // Calcula o número total de amostras no arquivo
     uint32_t numSamples = header.Subchunk2Size / (header.BitsPerSample / 8);
