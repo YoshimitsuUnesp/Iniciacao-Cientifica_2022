@@ -4,6 +4,7 @@
         "atomic": "c",
         "*.tcc": "c",
         "cstdint": "c",
-        "random": "c"
+        "random": "c",
+        "stdio.h": "c"
     }
 }
