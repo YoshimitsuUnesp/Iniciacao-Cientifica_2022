@@ -5,7 +5,7 @@
 Header get_header(Header header, FILE *file)
 {
     // Collects the header data
-    fread(&header, sizeof(header), 1, file);
+    fread(&header, sizeof(Header), 1, file);
 
     // Prints the collected data
     printf("File type: %c%c%c%c\n", header.chunk_id[0], header.chunk_id[1], header.chunk_id[2], header.chunk_id[3]);
@@ -89,7 +89,18 @@ void invert_wav()
     // Writes the header in the inverted file
     fwrite(&header, sizeof(Header), 1, output_file);
 
-    // Needs to reverse each sample     
+    // Invert samples assuming 16 PCM
+    short int sample;
+    while (fread(&sample, sizeof(short int), 1, input_file) == 1) {
+        sample -= 32767; 
+        fwrite(&sample, sizeof(short int), 1, output_file);
+    }   
+
+    printf("\nINVERTED COPY CREATED SUCCESSFULLY!\n\n");
+
+    // Preencher um vetor com while e um segundo vetor para ler o vetor em ordem inversa
+    // Transladar significa mudar o audio no eixo das amplitudes
+    // Pegar os valores de amplitudes e guardar num vetor, para extrair suas caracteristicas
 
     fclose(input_file);
     fclose(output_file);
