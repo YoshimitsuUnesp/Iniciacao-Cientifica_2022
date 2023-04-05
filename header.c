@@ -89,12 +89,22 @@ void invert_wav()
     // Writes the header in the inverted file
     fwrite(&header, sizeof(Header), 1, output_file);
 
-    // Invert samples assuming 16 PCM
-    short int sample;
-    while (fread(&sample, sizeof(short int), 1, input_file) == 1) {
-        sample -= 32767; 
-        fwrite(&sample, sizeof(short int), 1, output_file);
-    }   
+    // ----------------------------------------------
+
+    // Pointer of output file gets the end of the header;
+    unsigned int size = ftell(output_file);
+
+    // Pointer of input file must be in the final char
+    fseek(input_file, -1, SEEK_END);     
+    char data;
+
+    // Reads the input file backwards until reach the header
+    while (ftell(input_file) >= size)
+    {
+        fread(&data, sizeof(char), 1, input_file);
+        fwrite(&data, sizeof(char), 1, output_file);
+        fseek(input_file, -2, SEEK_CUR); // Pointer moves for the previous char
+    }
 
     printf("\nINVERTED COPY CREATED SUCCESSFULLY!\n\n");
 
