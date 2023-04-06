@@ -72,7 +72,7 @@ void copy_wav()
     return;
 }
 
-void invert_wav()
+void invert_y_axis_wav()
 {
     FILE *input_file = fopen("copy.wav", "rb");
 
@@ -84,29 +84,23 @@ void invert_wav()
 
     Header header = get_header(header, input_file);
 
-    FILE *output_file = fopen("inverted.wav", "wb");
+    FILE *output_file = fopen("inverted_y.wav", "wb");
 
     // Writes the header in the inverted file
     fwrite(&header, sizeof(Header), 1, output_file);
 
     // ----------------------------------------------
 
-    // Pointer of output file gets the end of the header;
-    unsigned int size = ftell(output_file);
+    unsigned int num_samples = header.subchunk2_size / (header.bits_per_sample / 8);
+    short int *data = malloc(num_samples * sizeof(short int)); // Allocates the size audio data
+    short int *inverted_data = malloc(num_samples *sizeof(short int));
 
-    // Pointer of input file must be in the final char
-    fseek(input_file, -1, SEEK_END);     
-    char data;
+    // At this moment, the pointer in input_file is after the header
+    fread(data, sizeof(short int), num_samples, input_file); // Reads the entire data
+    
+    // TODO: Needs to read the original file, store it in an array, and use a second array to invert its order
 
-    // Reads the input file backwards until reach the header
-    while (ftell(input_file) >= size)
-    {
-        fread(&data, sizeof(char), 1, input_file);
-        fwrite(&data, sizeof(char), 1, output_file);
-        fseek(input_file, -2, SEEK_CUR); // Pointer moves for the previous char
-    }
-
-    printf("\nINVERTED COPY CREATED SUCCESSFULLY!\n\n");
+    printf("\nAUDIO INVERTED IN Y AXIS SUCCESSFULLY!\n\n");
 
     // Preencher um vetor com while e um segundo vetor para ler o vetor em ordem inversa
     // Transladar significa mudar o audio no eixo das amplitudes
@@ -117,3 +111,68 @@ void invert_wav()
 
     return;
 }
+
+void invert_x_axis_wav()
+{
+    FILE *input_file = fopen("copy.wav", "rb");
+
+    if (!input_file)
+    {
+        printf("\nERROR: FILE NOT FOUND\n\n");
+        return;
+    }
+
+    Header header = get_header(header, input_file);
+
+    FILE *output_file = fopen("inverted_x.wav", "wb");
+
+    // Writes the header in the inverted file
+    fwrite(&header, sizeof(Header), 1, output_file);
+
+    // ----------------------------------------------
+
+    // Writes the header in the inverted file
+    fwrite(&header, sizeof(Header), 1, output_file);
+
+    unsigned int num_samples = header.subchunk2_size / (header.bits_per_sample / 8);
+    short int *data = malloc(num_samples * sizeof(short int));
+    int i;
+
+    // Inverts the amplitude of the samples
+    fread(data, sizeof(short int), num_samples, input_file);
+    for (i = 0; i < num_samples; i++)
+        data[i] *= -1;
+    fwrite(data, sizeof(short int), num_samples, output_file);
+
+    printf("\nAUDIO INVERTED IN X AXIS SUCCESSFULLY!\n\n");
+
+    // Preencher um vetor com while e um segundo vetor para ler o vetor em ordem inversa
+    // Transladar significa mudar o audio no eixo das amplitudes
+    // Pegar os valores de amplitudes e guardar num vetor, para extrair suas caracteristicas
+
+    fclose(input_file);
+    fclose(output_file);
+
+    free(data);
+
+    return;
+}
+
+    /* NOISE GENERATOR
+
+    // Pointer of output file gets the end of the header;
+    unsigned int size = ftell(output_file);
+
+    // Pointer of input file must be in the final char
+    fseek(input_file, 0, SEEK_END);
+    char data;
+
+    // Reads the input file backwards until reach the header
+    while (ftell(input_file) >= size)
+    {
+        fread(&data, sizeof(char), 1, input_file);
+        fwrite(&data, sizeof(char), 1, output_file);
+        fseek(input_file, -2, SEEK_CUR); // Pointer moves for the previous char
+    }
+
+    */

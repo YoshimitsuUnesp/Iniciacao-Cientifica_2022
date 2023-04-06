@@ -20,4 +20,6 @@ typedef struct wav_file{
 } Header;
 
 void copy_wav();
-void invert_wav();
+void invert_y_axis_wav();
+void invert_x_axis_wav();
+

@@ -35,13 +35,14 @@ int main()
     do
     {
         printf(
-            "-----------------------\n"
-            "|      MAIN MENU      |\n"
-            "-----------------------\n"
-            "| 1 - Copy WAV file   |\n"
-            "| 2 - Invert WAV file |\n"
-            "| 0 - Exit            |\n"
-            "-----------------------\n"
+            "------------------------------\n"
+            "|         MAIN MENU          |\n"
+            "------------------------------\n"
+            "| 1 - Copy WAV file          |\n"
+            "| 2 - Invert Y axis WAV file |\n"
+            "| 3 - Invert X axis WAV file |\n"
+            "| 0 - Exit                   |\n"
+            "------------------------------\n"
             "\nChoose an option:\n");
         scanf("%d", &op);
         switch (op)
@@ -54,7 +55,10 @@ int main()
             copy_wav();
             break;
         case 2:
-            invert_wav();
+            invert_y_axis_wav();
+            break;
+        case 3:
+            invert_x_axis_wav();
             break;
         default:
             printf("\nERROR: INVALID CODE\n\n");
