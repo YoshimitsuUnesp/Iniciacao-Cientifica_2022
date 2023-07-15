@@ -1,4 +1,4 @@
-typedef struct wav_file{
+typedef struct wav_header{
 
     // int = 4 bytes
     // short int = 2 bytes
@@ -19,7 +19,15 @@ typedef struct wav_file{
     unsigned int subchunk2_size;
 } Header;
 
+typedef struct wav
+{
+    Header header;
+    int *data;
+}Wav;
+
+
 void copy_wav();
+void print_header(Header header);
 void invert_y_axis_wav();
 void invert_x_axis_wav();
 
