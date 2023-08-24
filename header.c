@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "header.h"
+#include "menu.h"
 
 Header get_header(Header header, FILE *file)
 {
@@ -9,9 +10,9 @@ Header get_header(Header header, FILE *file)
 
     printf("\nWAV header copied successfully!\n\n");
 
-    // printf("\nPress ENTER to continue\n");
-    // getchar();
-    // getchar();
+    printf("\nPress ENTER to continue\n");
+    getchar();
+    getchar();
 
     return header;
 }
@@ -36,12 +37,12 @@ void print_header(Header header)
 
     printf("\nPress ENTER to continue\n");
     getchar();
-    getchar();
 }
 
 void copy_wav()
 {
-    FILE *input_file = fopen("applause.wav", "rb");
+    // Change this line to select the audio
+    FILE *input_file = fopen("onetofive.wav", "rb");
 
     // Checks if the file exists
     if (!input_file)
@@ -74,7 +75,12 @@ void copy_wav()
     fwrite(&header, sizeof(header), 1, output_file);
     fwrite(data, header.subchunk2_size, 1, output_file);
 
+    clear_screen();
+
     printf("\nFILE COPY CREATED SUCCESSFULLY!\n\n");
+
+    printf("\nPress ENTER to continue\n");
+    getchar();
 
     fclose(input_file);
     fclose(output_file);
@@ -101,8 +107,6 @@ void invert_y_axis_wav()
     // Writes the header in the inverted file
     fwrite(&header, sizeof(Header), 1, output_file);
 
-    // ----------------------------------------------
-
     unsigned int num_samples = header.subchunk2_size / (header.bits_per_sample / 8);
     short int *data = malloc(header.subchunk2_size); // Allocates the size audio data
     short int *inverted_data = malloc(header.subchunk2_size);
@@ -117,10 +121,18 @@ void invert_y_axis_wav()
 
     fwrite(inverted_data, header.subchunk2_size, 1, output_file);
 
+    clear_screen();
+
     printf("\nAUDIO INVERTED IN Y AXIS SUCCESSFULLY!\n\n");
+
+    printf("\nPress ENTER to continue\n");
+    getchar();
 
     fclose(input_file);
     fclose(output_file);
+
+    free(data);
+    free(inverted_data);
 
     return;
 }
@@ -142,11 +154,6 @@ void invert_x_axis_wav()
     // Writes the header in the inverted file
     fwrite(&header, sizeof(Header), 1, output_file);
 
-    // ----------------------------------------------
-
-    // Writes the header in the inverted file
-    fwrite(&header, sizeof(Header), 1, output_file);
-
     unsigned int num_samples = header.subchunk2_size / (header.bits_per_sample / 8);
     short int *data = malloc(num_samples * sizeof(short int));
     int i;
@@ -157,7 +164,12 @@ void invert_x_axis_wav()
         data[i] *= -1;
     fwrite(data, sizeof(short int), num_samples, output_file);
 
+    clear_screen();
+
     printf("\nAUDIO INVERTED IN X AXIS SUCCESSFULLY!\n\n");
+
+    printf("\nPress ENTER to continue\n");
+    getchar();
 
     // Preencher um vetor com while e um segundo vetor para ler o vetor em ordem inversa
     // Transladar significa mudar o audio no eixo das amplitudes
@@ -171,21 +183,41 @@ void invert_x_axis_wav()
     return;
 }
 
-/* NOISE GENERATOR
+void frame_selector(){
+    FILE *input_file = fopen("copy.wav", "rb");
 
-// Pointer of output file gets the end of the header;
-unsigned int size = ftell(output_file);
+    // Checks if the file exists
+    if (!input_file)
+    {
+        printf("\nERROR: FILE NOT FOUND\n\n");
+        return;
+    }
 
-// Pointer of input file must be in the final char
-fseek(input_file, 0, SEEK_END);
-char data;
+    // Gets the WAV file header
+    Header header = get_header(header, input_file);
 
-// Reads the input file backwards until reach the header
-while (ftell(input_file) >= size)
-{
-    fread(&data, sizeof(char), 1, input_file);
-    fwrite(&data, sizeof(char), 1, output_file);
-    fseek(input_file, -2, SEEK_CUR); // Pointer moves for the previous char
+    // -------------------------
+    // ERRO
+    
+    // Number of frames to be sampled
+    int frame_size = header.subchunk2_size / header.block_align;
+
+    short int *data = malloc(header.subchunk2_size); // Allocates the size audio data
+
+    fread(data, header.subchunk2_size, 1, input_file); // Reads the entire data
+
+    FILE *output_file = fopen("frame_selector", "wb");
+
+    // Temos o numero de frames e todos os dados ja lidos. E agora?
+    // Determinar o tamanho da janela
+    int window_selector = sizeof(data) / frame_size; // Isso esta correto? Ja nao temos windows lenght?
+
+    fwrite(data, window_selector, frame_size, output_file);
+
+    // -------------------------
+
+
+    fclose(input_file);
+    fclose(output_file);
+
 }
-
-*/

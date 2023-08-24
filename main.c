@@ -24,47 +24,13 @@ const string subchunk2_size = "####"; // 4 bytes - Num de bytes nos dados
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "header.h"
+#include "menu.h"
 
 // Compiled using GCC 64 bit; int = 4 bytes
 
 int main()
 {
-    int op;
-
-    do
-    {
-        printf(
-            "------------------------------\n"
-            "|         MAIN MENU          |\n"
-            "------------------------------\n"
-            "| 1 - Copy WAV file          |\n"
-            "| 2 - Invert Y axis WAV file |\n"
-            "| 3 - Invert X axis WAV file |\n"
-            "| 0 - Exit                   |\n"
-            "------------------------------\n"
-            "\nChoose an option:\n");
-        scanf("%d", &op);
-        switch (op)
-        {
-        case 0:
-            printf("\nClosing program...\n");
-            exit(0);
-            break;
-        case 1:
-            copy_wav();
-            break;
-        case 2:
-            invert_y_axis_wav();
-            break;
-        case 3:
-            invert_x_axis_wav();
-            break;
-        default:
-            printf("\nERROR: INVALID CODE\n\n");
-            break;
-        }
-    } while (op != 0);
+    main_menu();
 
     return 0;
 }
