@@ -52,6 +52,7 @@ void main_menu()
         case 4:
             printf("\nOPTION 4 CHOOSEN.\n\n");
             frame_selector();
+            break;
         default:
             printf("\nERROR: INVALID CODE\n\n");
             break;

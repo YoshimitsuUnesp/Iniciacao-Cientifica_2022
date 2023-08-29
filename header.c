@@ -196,28 +196,13 @@ void frame_selector(){
     // Gets the WAV file header
     Header header = get_header(header, input_file);
 
-    // -------------------------
-    // ERRO
-    
-    // Number of frames to be sampled
-    int frame_size = header.subchunk2_size / header.block_align;
+    // sampling rate = 441000
+    int window_size = header.sample_rate * 0.03; // 1323
+    printf("%d", window_size);
 
-    short int *data = malloc(header.subchunk2_size); // Allocates the size audio data
 
-    fread(data, header.subchunk2_size, 1, input_file); // Reads the entire data
 
-    FILE *output_file = fopen("frame_selector", "wb");
-
-    // Temos o numero de frames e todos os dados ja lidos. E agora?
-    // Determinar o tamanho da janela
-    int window_selector = sizeof(data) / frame_size; // Isso esta correto? Ja nao temos windows lenght?
-
-    fwrite(data, window_selector, frame_size, output_file);
-
-    // -------------------------
-
+    // 2048 -> 2^10
 
     fclose(input_file);
-    fclose(output_file);
-
 }
