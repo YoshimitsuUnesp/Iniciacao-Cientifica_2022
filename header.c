@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "header.h"
 #include "menu.h"
 
@@ -42,7 +43,7 @@ void print_header(Header header)
 void copy_wav()
 {
     // Change this line to select the audio
-    FILE *input_file = fopen("onetofive.wav", "rb");
+    FILE *input_file = fopen("audio1.wav", "rb");
 
     // Checks if the file exists
     if (!input_file)
@@ -171,10 +172,6 @@ void invert_x_axis_wav()
     printf("\nPress ENTER to continue\n");
     getchar();
 
-    // Preencher um vetor com while e um segundo vetor para ler o vetor em ordem inversa
-    // Transladar significa mudar o audio no eixo das amplitudes
-    // Pegar os valores de amplitudes e guardar num vetor, para extrair suas caracteristicas
-
     fclose(input_file);
     fclose(output_file);
 
@@ -183,8 +180,29 @@ void invert_x_axis_wav()
     return;
 }
 
-void frame_selector(){
-    FILE *input_file = fopen("copy.wav", "rb");
+double calculate_energy(short *frame_data, int frame_size)
+{
+    double energy = 0;
+
+    for (int i = 0; i < frame_size; i++)
+        energy += pow(frame_data[i], 2);
+
+    return energy / frame_size;
+}
+
+double calculate_zcr(short *frame_data, int frame_size)
+{
+    double zcr = 0;
+
+    for (int i = 0; i < frame_size - 1; i++)
+        zcr += frame_data[i] * frame_data[i + 1] < 0;
+
+    return zcr / (frame_size - 1);
+}
+
+void frame_selector()
+{
+    FILE *input_file = fopen("audio9.wav", "rb");
 
     // Checks if the file exists
     if (!input_file)
@@ -197,12 +215,65 @@ void frame_selector(){
     Header header = get_header(header, input_file);
 
     // sampling rate = 441000
-    int window_size = header.sample_rate * 0.03; // 1323
-    printf("%d", window_size);
+    // Since 441000 / 30 miliseconds = 1323, we will consider window size of 1024 samples
+    int frame_size = 1024;
 
+    // Number of frames in the entire audio
+    int num_frames = header.subchunk2_size / (header.bits_per_sample / 8) / frame_size;
 
+    printf("Number of frames: %d\n", num_frames);
 
-    // 2048 -> 2^10
+    // 1400 = voiced, 4900 = unvoiced. (4900+1400)/2 = 3150
+    // Considering median of 3150 zero-crossings per second, we have 94.5 zero-crossings in 30 ms
+    // ZCR hard threshold: 94.5 / (1024-1) = 0.924
 
+    // Considering each window placement covers L = 1024 samples, the normalized level is 1024
+    // 1 / 2 ^ 15. 2 ^ 10 / 2 ^ 15 = 2 ^ -5 = 0.0313
+
+    // Thresholds for zero crossings and energy
+    double zcr_threshold = 0.924;
+    double energy_threshold = 0.0313;
+
+    // Frame data buffer
+    short *frame_data = (short *)malloc(frame_size * sizeof(short));
+
+    double max_energy = 0;
+    for (int i = 0; i < num_frames; i++)
+    {
+        // Reads the current frame data
+        fread(frame_data, sizeof(short), frame_size, input_file);
+
+        // Calculates the energy of the current frame
+        double energy = calculate_energy(frame_data, frame_size);
+
+        // Updates the maximum energy value
+        if (energy > max_energy)
+            max_energy = energy;
+    }
+
+    // Rewinds the input file to the beginning of the data
+    fseek(input_file, sizeof(Header), SEEK_SET);
+
+    for (int i = 0; i < num_frames; i++)
+    {
+        // Reads the current frame data
+        fread(frame_data, sizeof(short), frame_size, input_file);
+
+        // Calculates the normalized energy of the current frame
+        double energy = calculate_energy(frame_data, frame_size) / max_energy;
+
+        // Calculates the zero crossing rate of the current frame
+        double zcr = calculate_zcr(frame_data, frame_size);
+
+        if (energy > energy_threshold && zcr < zcr_threshold && zcr > 0)
+        {
+            printf("Frame %d is voiced\n", i + 1);
+            printf("Energia detectada: %f\nZCR: %f\n", energy, zcr);
+        }
+        else
+            printf("Frame %d is unvoiced\n", i + 1);
+    }
+
+    free(frame_data);
     fclose(input_file);
 }
