@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <complex.h>
 #include "header.h"
 #include "menu.h"
+
+#define RATE 44100
+#define NFFT 1024
+#define PI 3.141592653589793
 
 Header get_header(Header header, FILE *file)
 {
@@ -43,7 +48,7 @@ void print_header(Header header)
 void copy_wav()
 {
     // Change this line to select the audio
-    FILE *input_file = fopen("audio1.wav", "rb");
+    FILE *input_file = fopen("somzinho.wav", "rb");
 
     // Checks if the file exists
     if (!input_file)
@@ -200,9 +205,119 @@ double calculate_zcr(short *frame_data, int frame_size)
     return zcr / (frame_size - 1);
 }
 
+void hanning_window(short *frame_data, int frame_size)
+{
+    for (int i = 0; i < frame_size; i++)
+    {
+        double multiplier = 0.5 * (1 - cos(2 * PI * i / (frame_size - 1)));
+        frame_data[i] = multiplier * frame_data[i];
+    }
+}
+
+void fft(short *frame_data, int frame_size, complex double *spectrum)
+{
+    // Initialize the spectrum array with zeros
+    for (int i = 0; i < NFFT; i++)
+        spectrum[i] = 0;
+
+    // Perform the FFT using the Cooley-Tukey algorithm
+    for (int k = 0; k < NFFT; k++)
+    {
+        for (int n = 0; n < frame_size; n++)
+        {
+            double angle = -2 * PI * k * n / NFFT;
+            spectrum[k] += frame_data[n] * (cos(angle) + I * sin(angle));
+        }
+    }
+}
+
+void calculate_cepstrum(complex double *spectrum, int spectrum_size, double *cepstrum)
+{
+    // Take the logarithm of the magnitude of the spectrum
+    for (int i = 0; i < spectrum_size; i++)
+        spectrum[i] = log(cabs(spectrum[i]));
+
+    // Perform an inverse FFT on the log-spectrum
+    for (int n = 0; n < NFFT; n++)
+    {
+        cepstrum[n] = 0;
+        for (int k = 0; k < NFFT; k++)
+        {
+            double angle = 2 * PI * k * n / NFFT;
+            cepstrum[n] += creal(spectrum[k]) * cos(angle) - cimag(spectrum[k]) * sin(angle);
+        }
+        cepstrum[n] /= NFFT;
+    }
+}
+
+void find_max(double *array, int array_size, double *max_value, int *max_index)
+{
+    // Initialize the max value and index with the first element
+    *max_value = array[0];
+    *max_index = 0;
+
+    // Loop through the array and update the max value and index if a larger element is found
+    for (int i = 1; i < array_size; i++)
+    {
+        if (array[i] > *max_value)
+        {
+            *max_value = array[i];
+            *max_index = i;
+        }
+    }
+}
+
+void find_pitch_and_formants(double *cepstrum, int cepstrum_size, double *pitch, double *formants)
+{
+    // Define the lower and upper bounds for the pitch and formant frequencies
+    int pitch_lower_bound = RATE / 500; // 500 Hz
+    int pitch_upper_bound = RATE / 50; // 50 Hz
+    int formant_lower_bound = RATE / 5000; // 5 kHz
+    int formant_upper_bound = RATE / 1000; // 1 kHz
+
+    // Find the maximum value and its index in the pitch range of the Cepstrum
+    double pitch_max_value;
+    int pitch_max_index;
+    find_max(cepstrum + pitch_lower_bound, pitch_upper_bound - pitch_lower_bound, &pitch_max_value, &pitch_max_index);
+
+    // Calculate the pitch frequency from the index
+    *pitch = RATE / (pitch_lower_bound + pitch_max_index);
+
+    // Find the four maximum values and their indices in the formant range of the Cepstrum
+    double formant_max_values[4];
+    int formant_max_indices[4];
+    for (int i = 0; i < 4; i++)
+    {
+        // Find the maximum value and its index in the current range
+        find_max(cepstrum + formant_lower_bound, formant_upper_bound - formant_lower_bound, &formant_max_values[i], &formant_max_indices[i]);
+
+        // Set the value at the index to zero to exclude it from the next iteration
+        cepstrum[formant_lower_bound + formant_max_indices[i]] = 0;
+    }
+
+    // Sort the formant indices in ascending order
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = i + 1; j < 4; j++)
+        {
+            if (formant_max_indices[i] > formant_max_indices[j])
+            {
+                // Swap the indices
+                int temp = formant_max_indices[i];
+                formant_max_indices[i] = formant_max_indices[j];
+                formant_max_indices[j] = temp;
+            }
+        }
+    }
+
+    // Calculate the formant frequencies from the indices
+    for (int i = 0; i < 4; i++)
+        formants[i] = RATE / (formant_lower_bound + formant_max_indices[i]);
+}
+
 void frame_selector()
 {
-    FILE *input_file = fopen("audio9.wav", "rb");
+    FILE *input_file = fopen("audio7.wav", "rb");
 
     // Checks if the file exists
     if (!input_file)
@@ -237,6 +352,16 @@ void frame_selector()
     // Frame data buffer
     short *frame_data = (short *)malloc(frame_size * sizeof(short));
 
+    // Spectrum buffer
+    complex double *spectrum = (complex double *)malloc(NFFT * sizeof(complex double));
+
+    // Cepstrum buffer
+    double *cepstrum = (double *)malloc(NFFT * sizeof(double));
+
+    // Pitch and formants variables
+    double pitch;
+    double formants[4];
+
     double max_energy = 0;
     for (int i = 0; i < num_frames; i++)
     {
@@ -254,26 +379,58 @@ void frame_selector()
     // Rewinds the input file to the beginning of the data
     fseek(input_file, sizeof(Header), SEEK_SET);
 
-    for (int i = 0; i < num_frames; i++)
-    {
-        // Reads the current frame data
-        fread(frame_data, sizeof(short), frame_size, input_file);
+  	// Open output file for writing formants and pitch data
+  	FILE *output_file = fopen("formants_pitch7.txt", "w");
 
-        // Calculates the normalized energy of the current frame
-        double energy = calculate_energy(frame_data, frame_size) / max_energy;
+  	// Check if output file was opened successfully
+  	if (!output_file)
+  	{
+  		printf("\nERROR: COULD NOT OPEN OUTPUT FILE\n\n");
+  		return;
+  	}
 
-        // Calculates the zero crossing rate of the current frame
-        double zcr = calculate_zcr(frame_data, frame_size);
+  	for (int i = 0; i < num_frames; i++)
+  	{
+  		// Reads the current frame data
+  		fread(frame_data, sizeof(short), frame_size, input_file);
 
-        if (energy > energy_threshold && zcr < zcr_threshold && zcr > 0)
-        {
-            printf("Frame %d is voiced\n", i + 1);
-            printf("Energia detectada: %f\nZCR: %f\n", energy, zcr);
-        }
+  		// Applies a Hanning window to the frame data
+  		hanning_window(frame_data, frame_size);
+
+  		// Calculates the normalized energy of the current frame
+  		double energy = calculate_energy(frame_data, frame_size) / max_energy;
+
+  		// Calculates the zero crossing rate of the current frame
+  		double zcr = calculate_zcr(frame_data, frame_size);
+
+  		if (energy > energy_threshold && zcr < zcr_threshold && zcr > 0)
+  		{
+  			printf("Frame %d is voiced\n", i + 1);
+  			printf("Energy detected: %f\nZCR: %f\n", energy, zcr);
+
+  			// Performs a FFT on the frame data and obtains the spectrum
+  			fft(frame_data, frame_size, spectrum);
+
+  			// Calculates the Cepstrum from the spectrum
+  			calculate_cepstrum(spectrum, NFFT, cepstrum);
+
+  			// Finds the pitch and the formants from the Cepstrum
+  			find_pitch_and_formants(cepstrum, NFFT, &pitch, formants);
+
+            // Prints the pitch and the formants
+            printf("Pitch: %f Hz\n", pitch);
+            printf("Formants: %f Hz, %f Hz, %f Hz, %f Hz\n", formants[0], formants[1], formants[2], formants[3]);
+
+  			// Prints the pitch and the formants to output file in specified format.
+  			fprintf(output_file,"%f,%f,%f,%f,%f\n",formants[0],formants[1],formants[2],formants[3],pitch);
+  		}
         else
             printf("Frame %d is unvoiced\n", i + 1);
-    }
+  	}
 
-    free(frame_data);
-    fclose(input_file);
+  	free(frame_data);
+  	free(spectrum);
+  	free(cepstrum);
+  	fclose(input_file);
+  	fclose(output_file);
 }
